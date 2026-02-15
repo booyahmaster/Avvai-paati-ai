@@ -3,6 +3,7 @@ import requests
 import time
 import os
 
+# UI Setup
 st.set_page_config(page_title="Avvaiyar Paatti 👵", page_icon="🌿", layout="centered")
 
 st.markdown("""
@@ -14,13 +15,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Cloud-ready URL check
+# This will be set in Streamlit Cloud Secrets
 API_URL = os.getenv("API_URL", "http://localhost:8000/chat")
 
+# Sidebar with Paatti's image
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/4/4e/Avvaiyar_Statue_Marina_Beach_Chennai.jpg")
     st.markdown("### 🌿 Daily Wisdom")
     st.caption("Powered by Siva's Fine-Tuned Model")
+    st.info("Paatti is listening to your heart through a custom-trained AI Brain.")
 
 st.title("👵 Avvaiyar Paatti's Advice")
 st.markdown("*\"Come, sit by me my child. Tell Paatti what is heavy on your heart...\"*")
@@ -28,10 +31,12 @@ st.markdown("*\"Come, sit by me my child. Tell Paatti what is heavy on your hear
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Display chat history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+# User Input
 if user_input := st.chat_input("Talk to Paatti..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
@@ -41,11 +46,13 @@ if user_input := st.chat_input("Talk to Paatti..."):
         message_placeholder = st.empty()
         with st.spinner("Paatti is listening... 🌿"):
             try:
-                response = requests.post(API_URL, json={"query": user_input})
+                # Send request to the Hugging Face Brain
+                response = requests.post(API_URL, json={"query": user_input}, timeout=30)
+                
                 if response.status_code == 200:
                     bot_text = response.json()["response"]
                     
-                    # Streaming effect for "Gentle" feeling
+                    # Typewriter effect for a "Grandma" feel
                     full_response = ""
                     for chunk in bot_text.split():
                         full_response += chunk + " "
@@ -55,6 +62,6 @@ if user_input := st.chat_input("Talk to Paatti..."):
                     
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
                 else:
-                    st.error("👵 Paatti is resting. (Check if api.py is running)")
-            except:
-                st.error("🚨 Connection Error: Start the Brain (api.py) first!")
+                    st.error(f"👵 Paatti is tired (Code: {response.status_code}). Check your Brain URL.")
+            except Exception as e:
+                st.error("🚨 Connection Error: Ensure your Hugging Face Space is 'Running'.")
